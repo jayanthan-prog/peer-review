@@ -1,6 +1,8 @@
 const express = require('express');
 const mysql = require('mysql');
 const cors = require('cors');
+const router = express.Router();
+
 const bodyParser = require('body-parser');
 require('dotenv').config();
 const authenticateToken = require('./middleware/authMiddleware'); // Import middleware
@@ -387,4 +389,84 @@ app.get("/api/allocated-questions/:student_id", (req, res) => {
           res.json(results);
       }
   });
+});
+
+// 📌 POST new assignment submission
+app.post("/api/assignment_submissions", (req, res) => {
+  const {
+      assignment_id,
+      assignment_title,
+      number_of_tasks,
+      number_of_ranks,
+      selected_task,
+      rank_1,
+      rank_2,
+      rank_3,
+      rank_4,
+      rank_5,
+      assign_by
+  } = req.body;
+
+  if (!assignment_id || !assignment_title || number_of_tasks === undefined || number_of_ranks === undefined || selected_task === undefined || !rank_1 || !rank_2 || !rank_3 || !rank_4 || !rank_5 || !assign_by) {
+      return res.status(400).json({ success: false, error: "Missing required fields" });
+  }
+
+  const sql = `
+      INSERT INTO assignment_submissions 
+      (assignment_id, assignment_title, number_of_tasks, number_of_ranks, selected_task, rank_1, rank_2, rank_3, rank_4, rank_5,assign_by )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ? ,?)
+  `;
+
+  db.query(sql, [assignment_id, assignment_title, number_of_tasks, number_of_ranks, selected_task, rank_1, rank_2, rank_3, rank_4, rank_5,assign_by], (err, result) => {
+      if (err) {
+          console.error("Error inserting assignment submission:", err);
+          return res.status(500).json({ success: false, error: "Database insert error" });
+      }
+      res.json({ success: true, message: "Assignment submission added", id: result.insertId });
+  });
+});
+
+// 📌 GET all assignment submissions
+app.get("/api/assignment_submissions", (req, res) => {
+  const sql = "SELECT * FROM assignment_submissions";
+
+  db.query(sql, (err, results) => {
+      if (err) {
+          console.error("Error fetching submissions:", err);
+          return res.status(500).json({ success: false, error: "Database fetch error" });
+      }
+      res.json(results);
+  });
+});
+// POST API to store calculation results
+app.post("/api/store_calculation", (req, res) => {
+    const { assignment_title, task_number, user_id, points } = req.body;
+    
+    if (!assignment_title || !task_number || !user_id || !points) {
+        return res.status(400).json({ message: "All fields are required" });
+    }
+
+    const sql = "INSERT INTO calculated_results (assignment_title, task_number, user_id, points) VALUES (?, ?, ?, ?)";
+    const values = [assignment_title, task_number, user_id, points];
+    
+    db.query(sql, values, (err, result) => {
+        if (err) {
+            console.error(err);
+            return res.status(500).json({ message: "Database error", error: err });
+        }
+        res.status(201).json({ message: "Calculation stored successfully", id: result.insertId });
+    });
+});
+
+// GET API to retrieve all calculations
+app.get("/api/store_calculation", (req, res) => {
+    const sql = "SELECT * FROM calculated_results";
+    
+    db.query(sql, (err, results) => {
+        if (err) {
+            console.error(err);
+            return res.status(500).json({ message: "Database error", error: err });
+        }
+        res.status(200).json(results);
+    });
 });
