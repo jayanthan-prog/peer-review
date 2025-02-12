@@ -289,43 +289,7 @@ const getPoints = (rank) => {
       return 0;
   }
 };
-
-// Fetch Ranks and Calculate Results
-app.get("/api/result", async (req, res) => {
-  try {
-    const response = await axios.get("http://192.168.205.45:5000/api/rank");
-    const rankingData = response.data; // Assuming this returns an array of ranks
-
-    let studentPoints = {};
-
-    rankingData.forEach(({ ranked_student_id, rank_given }) => {
-      if (!studentPoints[ranked_student_id]) {
-        studentPoints[ranked_student_id] = [];
-      }
-      studentPoints[ranked_student_id].push(getPoints(rank_given));
-    });
-
-    let results = [];
-    for (const student_id in studentPoints) {
-      const totalPoints = studentPoints[student_id].reduce((a, b) => a + b, 0);
-      const averagePoints = totalPoints / studentPoints[student_id].length;
-      const result_status = averagePoints >= 2 ? "PASS" : "FAIL";
-
-      results.push({ student_id, totalPoints, averagePoints, result_status });
-
-      // Store results in MySQL
-      const sql = "INSERT INTO result (student_id, total_points, average_points, result_status) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE total_points=?, average_points=?, result_status=?";
-      db.query(sql, [student_id, totalPoints, averagePoints, result_status, totalPoints, averagePoints, result_status], (err) => {
-        if (err) console.error("Error inserting results:", err);
-      });
-    }
-
-    res.json({ success: true, results });
-  } catch (error) {
-    console.error("Error fetching ranking data:", error);
-    res.status(500).json({ success: false, error: "Failed to fetch rankings" });
-  }
-});
+ 
 
 
 // 📌 GET all student results
@@ -426,47 +390,76 @@ app.post("/api/assignment_submissions", (req, res) => {
   });
 });
 
-// 📌 GET all assignment submissions
-app.get("/api/assignment_submissions", (req, res) => {
-  const sql = "SELECT * FROM assignment_submissions";
+app.post("/api/submit_ranking", (req, res) => {
+  const { assignment_title, task_number, given_by, question1, question2, question3, question4, question5 } = req.body;
 
-  db.query(sql, (err, results) => {
+  if (!assignment_title || !task_number || !given_by || !question1 || !question2 || !question3 || !question4 || !question5) {
+    return res.status(400).json({ error: "All fields are required." });
+  }
+
+  const insertQuery = `
+    INSERT INTO ranking_submissions (assignment_title, task_number, given_by, question1, question2, question3, question4, question5)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
+
+  db.query(
+    insertQuery,
+    [assignment_title, task_number, given_by, JSON.stringify(question1), JSON.stringify(question2), JSON.stringify(question3), JSON.stringify(question4), JSON.stringify(question5)],
+    (err, result) => {
       if (err) {
-          console.error("Error fetching submissions:", err);
-          return res.status(500).json({ success: false, error: "Database fetch error" });
+        console.error("Error inserting data:", err);
+        return res.status(500).json({ error: "Database error" });
       }
-      res.json(results);
+      res.status(201).json({ message: "Ranking submitted successfully!", id: result.insertId });
+    }
+  );
+});
+
+// **GET API to Retrieve All Rankings**
+app.get("/api/submit_ranking", (req, res) => {
+  const getQuery = "SELECT * FROM ranking_submissions ORDER BY created_at DESC";
+
+  db.query(getQuery, (err, results) => {
+    if (err) {
+      console.error("Error fetching data:", err);
+      return res.status(500).json({ error: "Database error" });
+    }
+    res.json(results);
   });
 });
-// POST API to store calculation results
-app.post("/api/store_calculation", (req, res) => {
-    const { assignment_title, task_number, user_id, points } = req.body;
-    
-    if (!assignment_title || !task_number || !user_id || !points) {
-        return res.status(400).json({ message: "All fields are required" });
+app.post("/api/assignment_results", (req, res) => {
+  const { assignment_title, task_number, candidate_id, marks } = req.body;
+
+  if (!assignment_title || !task_number || !candidate_id || marks === undefined) {
+    return res.status(400).json({ error: "All fields are required." });
+  }
+
+  const insertQuery = `
+    INSERT INTO assignment_results (assignment_title, task_number, candidate_id, marks)
+    VALUES (?, ?, ?, ?)`;
+
+  db.query(
+    insertQuery,
+    [assignment_title, task_number, candidate_id, marks],
+    (err, result) => {
+      if (err) {
+        console.error("Error inserting data:", err);
+        return res.status(500).json({ error: "Database error" });
+      }
+      res.status(200).json({ message: "Assignment result added successfully!", id: result.insertId });
     }
-
-    const sql = "INSERT INTO calculated_results (assignment_title, task_number, user_id, points) VALUES (?, ?, ?, ?)";
-    const values = [assignment_title, task_number, user_id, points];
-    
-    db.query(sql, values, (err, result) => {
-        if (err) {
-            console.error(err);
-            return res.status(500).json({ message: "Database error", error: err });
-        }
-        res.status(201).json({ message: "Calculation stored successfully", id: result.insertId });
-    });
+  );
 });
 
-// GET API to retrieve all calculations
-app.get("/api/store_calculation", (req, res) => {
-    const sql = "SELECT * FROM calculated_results";
-    
-    db.query(sql, (err, results) => {
-        if (err) {
-            console.error(err);
-            return res.status(500).json({ message: "Database error", error: err });
-        }
-        res.status(200).json(results);
-    });
+// **GET API to Retrieve All Assignment Results**
+app.get("/api/assignment_results", (req, res) => {
+  const getQuery = "SELECT * FROM assignment_results ORDER BY created_at DESC";
+
+  db.query(getQuery, (err, results) => {
+    if (err) {
+      console.error("Error fetching data:", err);
+      return res.status(500).json({ error: "Database error" });
+    }
 });
+
+    res.json(results);
+  });

@@ -37,8 +37,9 @@ class _DetailPageState extends State<DetailPage> {
   }
 
   int calculateTotalTime() {
+    // Updated time map: the values represent minutes.
     Map<String, int> timeInMinutes = {
-      '5 min': 500,
+      '5 min': 5,
       '10 min': 10,
       '15 min': 15,
       '20 min': 20,
@@ -49,7 +50,6 @@ class _DetailPageState extends State<DetailPage> {
       '45 min': 45,
       '50 min': 50
     };
-
     int totalMinutes = 0;
     for (var time in taskTimes) {
       if (timeInMinutes.containsKey(time)) {
@@ -69,7 +69,6 @@ class _DetailPageState extends State<DetailPage> {
       );
       return;
     }
-
     setState(() {
       isLoading = true;
     });
@@ -99,7 +98,6 @@ class _DetailPageState extends State<DetailPage> {
         headers: {"Content-Type": "application/json"},
         body: jsonEncode(assignmentData),
       );
-
       if (response.statusCode == 200) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("Assignment saved successfully!")),
@@ -110,7 +108,7 @@ class _DetailPageState extends State<DetailPage> {
       }
     } catch (error) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(" Assignment saved successfully! ")),
+        SnackBar(content: Text("Failed to save assignment!")),
       );
     } finally {
       setState(() {
@@ -119,7 +117,8 @@ class _DetailPageState extends State<DetailPage> {
     }
   }
 
-  void showNumberSelectionModal(Function(int) onSelect, String title) {
+  void showNumberSelectionModal(Function(int) onSelect, String title,
+      {int? maxCount}) {
     showModalBottomSheet(
       context: context,
       builder: (context) => Container(
@@ -134,7 +133,7 @@ class _DetailPageState extends State<DetailPage> {
                     color: Colors.black)),
             Expanded(
               child: ListView.builder(
-                itemCount: 50,
+                itemCount: maxCount ?? 50,
                 itemBuilder: (context, index) => ListTile(
                   title: Text('${index + 1}'),
                   onTap: () {
@@ -163,7 +162,6 @@ class _DetailPageState extends State<DetailPage> {
       '45 min',
       '50 min'
     ];
-
     showModalBottomSheet(
       context: context,
       builder: (context) => Container(
@@ -211,8 +209,8 @@ class _DetailPageState extends State<DetailPage> {
             // Card for Date and Time
             Card(
               elevation: 1,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
+              shape:
+                  RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(
@@ -239,13 +237,11 @@ class _DetailPageState extends State<DetailPage> {
               ),
             ),
             SizedBox(height: 20),
-
-            // Explanation Field wrapped in a Card View
             // Explanation Field wrapped in a Card View
             Card(
               elevation: 1,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
+              shape:
+                  RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: TextField(
@@ -274,44 +270,62 @@ class _DetailPageState extends State<DetailPage> {
                 ),
               ),
             ),
-
             SizedBox(height: 20),
-
             // Card for Number of Students Button
             Card(
               elevation: 1,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
+              shape:
+                  RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               child: ListTile(
                 title: Text("Number of Students: $numberOfStudents"),
                 trailing: Icon(Icons.arrow_forward),
                 onTap: () => showNumberSelectionModal(
-                    (value) => setState(() => numberOfStudents = value),
-                    "Select Number of Students"),
+                  (value) {
+                    setState(() {
+                      numberOfStudents = value;
+                      // Reset numberOfRanks if it exceeds the number of students
+                      if (numberOfRanks > numberOfStudents) {
+                        numberOfRanks = numberOfStudents;
+                      }
+                    });
+                  },
+                  "Select Number of Students",
+                ),
               ),
             ),
             SizedBox(height: 10),
-
             // Card for Number of Ranks Button
             Card(
               elevation: 5,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
+              shape:
+                  RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               child: ListTile(
                 title: Text("Number of Ranks: $numberOfRanks"),
                 trailing: Icon(Icons.arrow_forward),
-                onTap: () => showNumberSelectionModal(
-                    (value) => setState(() => numberOfRanks = value),
-                    "Select Number of Ranks"),
+                onTap: () {
+                  // Only allow selection if numberOfStudents is greater than 0
+                  if (numberOfStudents > 0) {
+                    showNumberSelectionModal(
+                      (value) => setState(() => numberOfRanks = value),
+                      "Select Number of Ranks",
+                      maxCount: numberOfStudents,
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                          content: Text(
+                              "Please select number of students first")),
+                    );
+                  }
+                },
               ),
             ),
             SizedBox(height: 10),
-
             // Card for Number of Tasks Button
             Card(
               elevation: 1,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
+              shape:
+                  RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               child: ListTile(
                 title: Text("Number of Tasks: $numberOfTasks"),
                 trailing: Icon(Icons.arrow_forward),
@@ -324,7 +338,6 @@ class _DetailPageState extends State<DetailPage> {
                 }, "Select Number of Tasks"),
               ),
             ),
-
             if (numberOfTasks > 0)
               Column(
                 children: List.generate(numberOfTasks, (index) {
@@ -372,7 +385,6 @@ class _DetailPageState extends State<DetailPage> {
                   );
                 }),
               ),
-
             if (numberOfTasks > 0)
               Padding(
                 padding: const EdgeInsets.only(top: 10),
@@ -381,7 +393,6 @@ class _DetailPageState extends State<DetailPage> {
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
               ),
-
             SizedBox(height: 30),
             ElevatedButton(
               onPressed: isLoading ? null : saveAssignment,

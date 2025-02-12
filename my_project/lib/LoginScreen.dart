@@ -4,7 +4,7 @@ import 'dart:convert';
 import 'package:my_project/Admin/adminDashboard.dart';
 import 'package:my_project/students/studentDashboard.dart';
 import 'package:my_project/config.dart';
- 
+
 class LoginScreen extends StatefulWidget {
   @override
   _LoginScreenState createState() => _LoginScreenState();
@@ -15,114 +15,121 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController facultyIdController = TextEditingController();
   bool loading = false;
   bool obscurePassword = true;
-
+  
   // Temporary storage for login ID
   String? loggedInUserId;
-
+  
   @override
   void initState() {
     super.initState();
-    print(loggedInUserId);
+    // Pre-fill for testing purposes
+    emailController.text = "jayanthan.ei23@bitsathy.ac.in";
+    facultyIdController.text = "19016";
   }
-
-  /// Handle login process
+  
   // Handle login process
-Future<void> handleLogin() async {
-  String email = emailController.text.trim();
-  String facultyId = facultyIdController.text.trim();
-  if (email.isEmpty || facultyId.isEmpty) {
-    showErrorDialog('Please enter both Email and Faculty ID');
-    return;
-  }
-  int? facultyIdInt = int.tryParse(facultyId);
-  if (facultyIdInt == null) {
-    showErrorDialog('Faculty ID must be a valid number');
-    return;
-  }
-  setState(() => loading = true);
-  try {
-    final responses = await Future.wait([
-      http.get(Uri.parse('$apiBaseUrl/api/faculty')),
-      http.get(Uri.parse('$apiBaseUrl/api/student')),
-    ]);
-    if (responses[0].statusCode == 200 && responses[1].statusCode == 200) {
-      final List facultyData = json.decode(responses[0].body);
-      final List studentData = json.decode(responses[1].body);
-      bool isFaculty = facultyData.any((faculty) =>
-          faculty['emailId'] == email &&
-          faculty['facultyId'].toString() == facultyId);
-      bool isStudent = studentData.any((student) =>
-          student['emailId'] == email &&
-          student['facultyId'].toString() == facultyId);
-      setState(() => loading = false);
-      if (isFaculty || isStudent) {
-        // Store the logged-in user ID temporarily
-        loggedInUserId = facultyId;
-        print('Logged in user id in login page post aagutha nnu check panna: $loggedInUserId'); // Print the logged-in user ID
-        // Navigate to respective dashboard
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) =>
-                isFaculty ? AdminScreen() : StudentDashboard(loggedInUserId: loggedInUserId), // Pass the user ID
-          ),
-        );
-      } else {
-        showErrorDialog('Invalid credentials');
-      }
-    } else {
-      throw Exception('Server error');
+
+  Future<void> handleLogin() async {
+    String email = emailController.text.trim();
+    String facultyId = facultyIdController.text.trim();
+    if (email.isEmpty || facultyId.isEmpty) {
+      showErrorDialog('Please enter both Email and Faculty ID');
+      return;
     }
-  } catch (e) {
-    setState(() => loading = false);
-    showErrorDialog('Network error. Please check your connection.');
+    int? facultyIdInt = int.tryParse(facultyId);
+    if (facultyIdInt == null) {
+      showErrorDialog('Faculty ID must be a valid number');
+      return;
+    }
+    setState(() => loading = true);
+    try {
+      final responses = await Future.wait([
+        http.get(Uri.parse('$apiBaseUrl/api/faculty')),
+        http.get(Uri.parse('$apiBaseUrl/api/student')),
+      ]);
+      if (responses[0].statusCode == 200 && responses[1].statusCode == 200) {
+        final List facultyData = json.decode(responses[0].body);
+        final List studentData = json.decode(responses[1].body);
+        bool isFaculty = facultyData.any((faculty) =>
+            faculty['emailId'] == email &&
+            faculty['facultyId'].toString() == facultyId);
+        bool isStudent = studentData.any((student) =>
+            student['emailId'] == email &&
+            student['facultyId'].toString() == facultyId);
+        setState(() => loading = false);
+        if (isFaculty || isStudent) {
+          // Store the logged-in user ID temporarily
+          loggedInUserId = facultyId;
+          print('Logged in user id: $loggedInUserId');
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => isFaculty
+                  ? AdminScreen()
+                  : StudentDashboard(loggedInUserId: loggedInUserId),
+            ),
+          );
+        } else {
+          showErrorDialog('Invalid credentials');
+        }
+      } else {
+        throw Exception('Server error');
+      }
+    } catch (e) {
+      setState(() => loading = false);
+      showErrorDialog(
+          'Network error. Please check your connection. ${e.toString()}');
+    }
   }
-}
+  
   void showErrorDialog(String message) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Login Failed'),
+        title: Text('Login Failed', style: TextStyle(fontWeight: FontWeight.bold)),
         content: Text(message),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('OK'),
+            child: Text('OK', style: TextStyle(color: Colors.blue[700])),
           ),
         ],
       ),
     );
   }
-
+  
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.blue[50],
       body: Center(
         child: SingleChildScrollView(
-          padding: EdgeInsets.symmetric(horizontal: 30),
+          padding: EdgeInsets.symmetric(horizontal: 30, vertical: 40),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(Icons.school_rounded, size: 100, color: Colors.blue[700]),
               SizedBox(height: 20),
+              // "Welcome Back!" text for a friendly greeting
               Text(
                 "Welcome Back!",
                 style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.blue[700]),
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.blue[700],
+                ),
               ),
               SizedBox(height: 40),
               Container(
                 decoration: BoxDecoration(
+                  color: Colors.white,
                   borderRadius: BorderRadius.circular(20),
-                  color: Colors.white.withOpacity(0.8),
                   boxShadow: [
                     BoxShadow(
-                        color: Colors.black26,
-                        blurRadius: 10,
-                        offset: Offset(0, 4))
+                      color: Colors.black26,
+                      blurRadius: 10,
+                      offset: Offset(0, 4),
+                    )
                   ],
                 ),
                 padding: EdgeInsets.symmetric(horizontal: 25, vertical: 40),
@@ -141,13 +148,10 @@ Future<void> handleLogin() async {
                       obscureText: obscurePassword,
                       suffixIcon: IconButton(
                         icon: Icon(
-                          obscurePassword
-                              ? Icons.visibility
-                              : Icons.visibility_off,
+                          obscurePassword ? Icons.visibility : Icons.visibility_off,
                           color: Colors.grey,
                         ),
-                        onPressed: () =>
-                            setState(() => obscurePassword = !obscurePassword),
+                        onPressed: () => setState(() => obscurePassword = !obscurePassword),
                       ),
                     ),
                     SizedBox(height: 30),
@@ -158,19 +162,23 @@ Future<void> handleLogin() async {
                         padding: EdgeInsets.symmetric(vertical: 15),
                         minimumSize: Size(double.infinity, 50),
                         shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(25)),
+                          borderRadius: BorderRadius.circular(25),
+                        ),
                         elevation: 10,
                       ),
-                      child: Text("SIGN IN",
-                          style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white)),
+                      child: Text(
+                        "SIGN IN",
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
                     ),
                     if (loading) ...[
                       SizedBox(height: 20),
-                      CircularProgressIndicator()
-                    ],
+                      CircularProgressIndicator(),
+                    ]
                   ],
                 ),
               ),
@@ -180,7 +188,7 @@ Future<void> handleLogin() async {
       ),
     );
   }
-
+  
   Widget _buildTextField({
     required TextEditingController controller,
     required IconData icon,
@@ -193,6 +201,7 @@ Future<void> handleLogin() async {
       child: TextField(
         controller: controller,
         obscureText: obscureText,
+        keyboardType: (hint == "Faculty ID") ? TextInputType.number : TextInputType.emailAddress,
         decoration: InputDecoration(
           prefixIcon: Icon(icon, color: Colors.blue[700]),
           hintText: hint,
@@ -204,13 +213,14 @@ Future<void> handleLogin() async {
       ),
     );
   }
-
+  
   BoxDecoration _inputBoxDecoration() {
     return BoxDecoration(
       color: Colors.white,
       borderRadius: BorderRadius.circular(12),
       boxShadow: [
-        BoxShadow(color: Colors.black26, blurRadius: 8, offset: Offset(0, 4))
+        BoxShadow(
+            color: Colors.black26, blurRadius: 8, offset: Offset(0, 4))
       ],
     );
   }
