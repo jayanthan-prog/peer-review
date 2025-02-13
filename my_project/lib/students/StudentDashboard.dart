@@ -29,39 +29,48 @@ class _StudentDashboardState extends State<StudentDashboard> {
   }
 
   Future<void> fetchAssignments() async {
-    setState(() {
-      isLoading = true;
-    });
-    try {
-      final response = await http.get(Uri.parse("$apiBaseUrl/api/assignment"));
-      if (response.statusCode == 200) {
-        List<dynamic> allAssignments = json.decode(response.body);
-        // Filter assignments based on whether the logged in user is in the assign_to list.
-        setState(() {
-          assignments = allAssignments.where((assignment) {
-            final List<String> assignedUsers =
-                (assignment['assign_to'] as String).split(',');
-            return assignedUsers.contains(userId);
-          }).toList();
-        });
-      } else {
-        print("Error: ${response.statusCode}");
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Failed to fetch assignments")),
-        );
-      }
-    } catch (e) {
-      print("Error fetching assignments: $e");
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("An error occurred while fetching assignments")),
-      );
-    } finally {
-      setState(() {
-        isLoading = false;
-      });
-    }
-  }
+  setState(() {
+    isLoading = true;
+  });
 
+  // Print debug information before fetching data
+  print("Fetching Events for user ID: $userId");
+
+  try {
+    final response = await http.get(Uri.parse("$apiBaseUrl/api/assignment"));
+    print("HTTP GET request sent to: $apiBaseUrl/api/assignment");
+
+    if (response.statusCode == 200) {
+      List<dynamic> allAssignments = json.decode(response.body);
+      print("Events fetched successfully. Total Events: ${allAssignments.length}");
+
+      // Filter assignments based on whether the logged in user is in the assign_to list.
+      setState(() {
+        assignments = allAssignments.where((assignment) {
+          final List<String> assignedUsers =
+              (assignment['assign_to'] as String).split(',');
+          return assignedUsers.contains(userId);
+        }).toList();
+      });
+      
+      print("Filtered Events for user ID $userId: ${assignments.length} assignments found.");
+    } else {
+      print("Error: ${response.statusCode}");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Failed to fetch Events")),
+      );
+    }
+  } catch (e) {
+    print("Error fetching Events: $e");
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("An error occurred while fetching Events")),
+    );
+  } finally {
+    setState(() {
+      isLoading = false;
+    });
+  }
+}
   void navigateToAssignmentDetails(String title) async {
     // Before navigation we call the backend to get this assignment’s details
     final uri = Uri.parse("$apiBaseUrl/api/assignments")
@@ -86,9 +95,9 @@ class _StudentDashboardState extends State<StudentDashboard> {
         showNoDetailsAlert();
       }
     } else {
-      print("Failed to fetch assignment details");
+      print("Failed to fetch Event details");
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Failed to fetch assignment details!")),
+        SnackBar(content: Text("Failed to fetch Events details!")),
       );
     }
   }
@@ -99,7 +108,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
       builder: (context) {
         return AlertDialog(
           title: Text("No Details Found"),
-          content: Text("The details for this assignment are not available."),
+          content: Text("The details for this Events are not available."),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
@@ -124,7 +133,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
       body: isLoading
           ? Center(child: CircularProgressIndicator())
           : assignments.isEmpty
-              ? Center(child: Text("No assignments available"))
+              ? Center(child: Text("No Events available"))
               : ListView.builder(
                   itemCount: assignments.length,
                   itemBuilder: (context, index) {
@@ -149,12 +158,12 @@ class _StudentDashboardState extends State<StudentDashboard> {
                             size: 20, color: Colors.blueAccent),
                         onTap: () {
                           print(
-                              "ListTile tapped for assignment: ${assignment['title']}");
+                              "ListTile tapped for Events: ${assignment['title']}");
                           setState(() {
                             clickedAssignmentTitle = assignment['title'];
                           });
                           print(
-                              "Assignment title clicked: $clickedAssignmentTitle");
+                              "Events title clicked: $clickedAssignmentTitle");
                           navigateToAssignmentDetails(assignment['title']);
                         },
                       ),
@@ -210,13 +219,13 @@ class _AssignmentDetailsPageState extends State<AssignmentDetailsPage> {
       } else {
         setState(() => isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Assignment not found!")),
+          SnackBar(content: Text("Events not found!")),
         );
       }
     } else {
       setState(() => isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Failed to fetch assignment details!")),
+        SnackBar(content: Text("Failed to fetch Event details!")),
       );
     }
   }
@@ -231,8 +240,8 @@ class _AssignmentDetailsPageState extends State<AssignmentDetailsPage> {
     }
     if (assignmentDetails == null) {
       return Scaffold(
-        appBar: AppBar(title: Text("Assignment Details")),
-        body: Center(child: Text("No assignment found.")),
+        appBar: AppBar(title: Text("Event Details")),
+        body: Center(child: Text("No Events found.")),
       );
     }
     return Scaffold(
@@ -487,17 +496,17 @@ class _TaskPageState extends State<TaskPage> {
               }),
             ),
             Spacer(),
-            ElevatedButton(
-              onPressed: moveToNextTask,
-              child: Text(widget.currentIndex + 1 < widget.allTasks.length
-                  ? "Next Task"
-                  : "Finish"),
-              style: ElevatedButton.styleFrom(
-                padding: EdgeInsets.symmetric(vertical: 12, horizontal: 24),
-                textStyle: TextStyle(fontSize: 18),
-                backgroundColor: Colors.blueAccent,
-              ),
-            ),
+            // // ElevatedButton(
+            // //   onPressed: moveToNextTask,
+            // //   child: Text(widget.currentIndex + 1 < widget.allTasks.length
+            // //       ? "Next Task"
+            // //       : "Finish"),
+            // //   style: ElevatedButton.styleFrom(
+            // //     padding: EdgeInsets.symmetric(vertical: 12, horizontal: 24),
+            // //     textStyle: TextStyle(fontSize: 18),
+            // //     backgroundColor: Colors.blueAccent,
+            // //   ),
+            // ),
             SizedBox(height: 20),
           ],
         ),
@@ -759,7 +768,7 @@ class _CompletionPageState extends State<CompletionPage> {
         assignmentsList = data;
       });
     } else {
-      print("Failed to fetch assignments list.");
+      print("Failed to fetch Event list.");
     }
   }
 
@@ -809,10 +818,10 @@ class _CompletionPageState extends State<CompletionPage> {
         });
       } else {
         print(
-            "No assignment found on backend matching title: $clickedAssignmentTitle");
+            "No Events found on backend matching title: $clickedAssignmentTitle");
       }
     } else {
-      print("Failed to fetch assignment details from the backend.");
+      print("Failed to fetch Events details from the backend.");
     }
   }
 
@@ -931,7 +940,7 @@ class _CompletionPageState extends State<CompletionPage> {
                             EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                         child: DropdownButton<String>(
                           value: null,
-                          hint: Text("Choose assignment title"),
+                          hint: Text("Choose Event title"),
                           isExpanded: true,
                           underline: SizedBox(),
                           onChanged: (String? newValue) {
@@ -951,7 +960,7 @@ class _CompletionPageState extends State<CompletionPage> {
                     ),
                     SizedBox(height: 20),
                     Text(
-                      "Once you select an assignment, its details (number of tasks, number of ranks, etc.) will be displayed below.",
+                      "Once you select an event, its details (number of tasks, number of ranks, etc.) will be displayed below.",
                       style: TextStyle(fontSize: 16),
                     ),
                   ],
@@ -1372,7 +1381,7 @@ class CalculationPageState extends State<CalculationPage> {
                 padding: EdgeInsets.all(16.0),
                 child: Column(
                   children: [
-                    Text("Assignment: ${widget.assignmentTitle}",
+                    Text("Events: ${widget.assignmentTitle}",
                         style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                     SizedBox(height: 12),
                     ElevatedButton(

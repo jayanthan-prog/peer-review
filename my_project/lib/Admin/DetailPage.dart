@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:my_project/config.dart';
+import 'package:intl/intl.dart';
 
 class DetailPage extends StatefulWidget {
   final Map<String, dynamic> assignment;
@@ -59,64 +60,80 @@ class _DetailPageState extends State<DetailPage> {
     return totalMinutes;
   }
 
-  Future<void> saveAssignment() async {
-    if (explanationController.text.isEmpty ||
-        numberOfStudents == 0 ||
-        numberOfTasks == 0 ||
-        taskTitles.contains('')) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Please fill in all fields properly!')),
-      );
-      return;
-    }
-    setState(() {
-      isLoading = true;
-    });
-
-    final assignmentData = {
-      "title": widget.assignment["title"],
-      "date": widget.assignment["date"],
-      "start_time": widget.assignment["start_time"],
-      "stop_time": widget.assignment["stop_time"],
-      "explanation": explanationController.text,
-      "number_of_students": numberOfStudents,
-      "numberoftasks": numberOfTasks,
-      "numberofranks": numberOfRanks,
-      "task_details": List.generate(
-        taskTitles.length,
-        (index) => {
-          "task_title": taskTitles[index],
-          "task_time": taskTimes[index],
-        },
-      ),
-      "total_time": calculateTotalTime(),
-    };
-
-    try {
-      final response = await http.post(
-        Uri.parse("$apiBaseUrl/api/assignments"),
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode(assignmentData),
-      );
-      if (response.statusCode == 200) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Assignment saved successfully!")),
-        );
-        Navigator.pop(context);
-      } else {
-        throw Exception("Failed to save assignment");
-      }
-    } catch (error) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Failed to save assignment!")),
-      );
-    } finally {
-      setState(() {
-        isLoading = false;
-      });
-    }
+Future<void> saveAssignment() async {
+  if (explanationController.text.isEmpty ||
+      numberOfStudents == 0 ||
+      numberOfTasks == 0 ||
+      taskTitles.contains('')) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Please fill in all fields properly!')),
+    );
+    return;
   }
 
+  setState(() {
+    isLoading = true;
+  });
+
+  // Prepare assignment data without UTC conversion
+  // Format the date to remove the UTC format
+  String originalDate = widget.assignment["date"]; // e.g., "2025-02-12T18:30:00.000Z"
+  DateTime parsedDate = DateTime.parse(originalDate); // Parse to DateTime
+  String formattedDate = DateFormat('yyyy-MM-dd').format(parsedDate); // Format to desired string
+
+  final assignmentData = {
+    "title": widget.assignment["title"],
+    "date": formattedDate, // Use the formatted date
+    "start_time": widget.assignment["start_time"], // Use the start time as is
+    "stop_time": widget.assignment["stop_time"], // Use the stop time as is
+    "explanation": explanationController.text,
+    "number_of_students": numberOfStudents,
+    "numberoftasks": numberOfTasks,
+    "numberofranks": numberOfRanks,
+    "task_details": List.generate(
+      taskTitles.length,
+      (index) => {
+        "task_title": taskTitles[index],
+        "task_time": taskTimes[index],
+      },
+    ),
+    "total_time": calculateTotalTime(),
+  };
+
+  // Debug: Print assignment data before sending
+  print("Posting Assignment Data: ${jsonEncode(assignmentData)}");
+
+  try {
+    final response = await http.post(
+      Uri.parse("$apiBaseUrl/api/assignments"),
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode(assignmentData), // Send the assignment data
+    );
+
+    // Debug: Print response status and body
+    print("Response Status: ${response.statusCode}");
+    print("Response Body: ${response.body}");
+
+    if (response.statusCode == 200) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Assignment saved successfully!")),
+      );
+      Navigator.pop(context);
+    } else {
+      throw Exception("Failed to save assignment");
+    }
+  } catch (error) {
+    // Debug: Print the error
+    print("Error occurred: $error");
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Failed to save assignment!")),
+    );
+  } finally {
+    setState(() {
+      isLoading = false;
+    });
+  }
+}
   void showNumberSelectionModal(Function(int) onSelect, String title,
       {int? maxCount}) {
     showModalBottomSheet(
@@ -198,7 +215,7 @@ class _DetailPageState extends State<DetailPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Assignment Detail"),
+        title: Text("Event Detail"),
         backgroundColor: Colors.blueAccent,
       ),
       body: SingleChildScrollView(
@@ -217,7 +234,7 @@ class _DetailPageState extends State<DetailPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      "Assignment: ${widget.assignment["title"]}",
+                      "Event: ${widget.assignment["title"]}",
                       style: TextStyle(
                           fontSize: 22,
                           fontWeight: FontWeight.bold,
@@ -404,7 +421,7 @@ class _DetailPageState extends State<DetailPage> {
               ),
               child: isLoading
                   ? CircularProgressIndicator(color: Colors.white)
-                  : Text("Save Assignment"),
+                  : Text("Save Event"),
             ),
           ],
         ),

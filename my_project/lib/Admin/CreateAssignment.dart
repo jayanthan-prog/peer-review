@@ -47,72 +47,85 @@ class _CreateAssignmentState extends State<CreateAssignment> {
     }
   }
 
-  Future<void> _handleSubmit() async {
-    if (_titleController.text.isEmpty) {
-      showErrorDialog("Title cannot be empty.");
-      return;
-    }
-
-    setState(() {
-      isLoading = true;
-    });
-
-    String formattedDate = DateFormat('yyyy-MM-dd').format(_selectedDate);
-    String formattedStartTime = "${_startTime.hour}:${_startTime.minute}:00";
-    String formattedStopTime = "${_stopTime.hour}:${_stopTime.minute}:00";
-
-    Map<String, dynamic> assignmentData = {
-      "title": _titleController.text,
-      "date": formattedDate,
-      "startTime": formattedStartTime,
-      "stopTime": formattedStopTime,
-    };
-
-    try {
-      final response = await http.get(
-        Uri.parse("$apiBaseUrl/api/assignments"),
-        headers: {"Content-Type": "application/json"},
-      );
-
-      if (response.statusCode == 200) {
-        List<dynamic> existingAssignments = json.decode(response.body);
-
-        bool isDuplicate = existingAssignments.any((assignment) =>
-            assignment["title"] == assignmentData["title"] &&
-            assignment["date"] == assignmentData["date"]);
-
-        if (isDuplicate) {
-          showErrorDialog(
-              "Duplicate entry detected! Please use a different title or date.");
-          return;
-        }
-      }
-
-      final postResponse = await http.post(
-        Uri.parse("$apiBaseUrl/api/assignment"),
-        headers: {"Content-Type": "application/json"},
-        body: json.encode(assignmentData),
-      );
-
-      if (postResponse.statusCode == 200) {
-        showSuccessDialog('Assignment Created Successfully');
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (context) => AdminScreen()),
-          (route) => false,
-        );
-      } else {
-        showErrorDialog("Error submitting assignment: ${postResponse.body}");
-      }
-    } catch (error) {
-      showErrorDialog("Error: $error");
-    } finally {
-      setState(() {
-        isLoading = false;
-      });
-    }
+Future<void> _handleSubmit() async {
+  if (_titleController.text.isEmpty) {
+    showErrorDialog("Title cannot be empty.");
+    return;
   }
+  
+  setState(() {
+    isLoading = true;
+  });
 
+  // Format the date and time without UTC
+  String formattedDate = DateFormat('yyyy-MM-dd').format(_selectedDate);
+  String formattedStartTime = "${_startTime.hour.toString().padLeft(2, '0')}:${_startTime.minute.toString().padLeft(2, '0')}"; // HH:mm
+  String formattedStopTime = "${_stopTime.hour.toString().padLeft(2, '0')}:${_stopTime.minute.toString().padLeft(2, '0')}"; // HH:mm
+
+  // Print the details to the debug console before posting
+  print("Event Title: ${_titleController.text}");
+  print("Event Date: $formattedDate");
+  print("Start Time: $formattedStartTime");
+  print("Stop Time: $formattedStopTime");
+
+  Map<String, dynamic> assignmentData = {
+    "title": _titleController.text,
+    "date": formattedDate, // Date in local format
+    "startTime": formattedStartTime, // Local start time in HH:mm format
+    "stopTime": formattedStopTime, // Local stop time in HH:mm format
+  };
+
+  try {
+    // Check for existing assignments
+    final response = await http.get(
+      Uri.parse("$apiBaseUrl/api/assignments"),
+      headers: {"Content-Type": "application/json"},
+    );
+
+    if (response.statusCode == 200) {
+      List<dynamic> existingAssignments = json.decode(response.body);
+      // Print existing assignments to the debug console
+      for (var assignment in existingAssignments) {
+        // Format the date for display
+        String existingDate = assignment["date"].toString().split("T")[0]; // Get only the date part
+        print("Existing Assignment: Title: ${assignment["title"]}, Date: $existingDate, Start Time: ${assignment["start_time"]}, Stop Time: ${assignment["stop_time"]}");
+      }
+
+      // Check for duplicates
+      bool isDuplicate = existingAssignments.any((assignment) =>
+          assignment["title"] == assignmentData["title"] &&
+          assignment["date"] == assignmentData["date"]);
+      if (isDuplicate) {
+        showErrorDialog("Duplicate entry detected! Please use a different title or date.");
+        return;
+      }
+    }
+
+    // Post the new assignment
+    final postResponse = await http.post(
+      Uri.parse("$apiBaseUrl/api/assignment"),
+      headers: {"Content-Type": "application/json"},
+      body: json.encode(assignmentData),
+    );
+
+    if (postResponse.statusCode == 200) {
+      showSuccessDialog('Event Created Successfully');
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => AdminScreen()),
+        (route) => false,
+      );
+    } else {
+      showErrorDialog("Error submitting assignment: ${postResponse.body}");
+    }
+  } catch (error) {
+    showErrorDialog("Error: $error");
+  } finally {
+    setState(() {
+      isLoading = false;
+    });
+  }
+}
   void showErrorDialog(String message) {
     showDialog(
       context: context,
@@ -158,7 +171,7 @@ class _CreateAssignmentState extends State<CreateAssignment> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text("Create Assignment",
+        title: const Text("Create Event",
             style: TextStyle(color: Colors.white)),
         backgroundColor: const Color(0xFF2B4F87),
         centerTitle: true,
@@ -193,7 +206,7 @@ class _CreateAssignmentState extends State<CreateAssignment> {
         child: TextField(
           controller: _titleController,
           decoration: const InputDecoration(
-            labelText: "Assignment Title",
+            labelText: "Event Title",
             border: InputBorder.none,
           ),
         ),

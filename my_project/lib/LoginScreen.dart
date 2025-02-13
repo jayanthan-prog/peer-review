@@ -75,7 +75,7 @@ class _LoginScreenState extends State<LoginScreen> {
         throw Exception('Server error');
       }
     } catch (e) {
-      setState(() => loading = false);
+      setState(() => loading = true);
       showErrorDialog(
           'Network error. Please check your connection. ${e.toString()}');
     }
@@ -143,7 +143,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     _buildTextField(
                       controller: facultyIdController,
                       icon: Icons.lock,
-                      hint: "Faculty ID",
+                      hint: " ID",
                       obscureText: obscurePassword,
                       suffixIcon: IconButton(
                         icon: Icon(
