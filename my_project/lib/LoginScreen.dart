@@ -23,8 +23,7 @@ class _LoginScreenState extends State<LoginScreen> {
   void initState() {
     super.initState();
     // Pre-fill for testing purposes
-    emailController.text = "jayanthan.ei23@bitsathy.ac.in";
-    facultyIdController.text = "19016";
+     
   }
   
   // Handle login process

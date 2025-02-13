@@ -449,7 +449,6 @@ app.post("/api/assignment_results", (req, res) => {
     }
   );
 });
-
 // **GET API to Retrieve All Assignment Results**
 app.get("/api/assignment_results", (req, res) => {
   const getQuery = "SELECT * FROM assignment_results ORDER BY created_at DESC";
@@ -459,7 +458,8 @@ app.get("/api/assignment_results", (req, res) => {
       console.error("Error fetching data:", err);
       return res.status(500).json({ error: "Database error" });
     }
-});
-
+    
+    // Send the response inside the callback
     res.json(results);
   });
+});

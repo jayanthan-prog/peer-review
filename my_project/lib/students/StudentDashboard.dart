@@ -553,7 +553,7 @@ class _RankingPageState extends State<RankingPage> {
   }
 
   Future<bool> submitRanking() async {
-    final url = Uri.parse("$apiBaseUrl/api/assignment_results");
+    final url = Uri.parse("$apiBaseUrl/api/submit_ranking");
     Map<String, dynamic> rankingSubmission = {
       "assignment_title": widget.assignmentTitle,
       "task_number": widget.taskNumber,

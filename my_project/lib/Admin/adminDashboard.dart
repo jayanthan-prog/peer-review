@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:my_project/Admin/CreateAssignment.dart';
 import 'dart:convert';
 import 'detailPage.dart';
-import 'createAssignment.dart';
 import 'package:my_project/config.dart';
 import 'package:my_project/LoginScreen.dart';
 
@@ -29,8 +29,7 @@ class _AdminScreenState extends State<AdminScreen> {
 
   Future<void> fetchAssignments() async {
     try {
-      final response =
-          await http.get(Uri.parse('$apiBaseUrl/api/assignment'));
+      final response = await http.get(Uri.parse('$apiBaseUrl/api/assignment'));
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         // Reverse the list so that newest assignments appear first.
@@ -125,7 +124,7 @@ class _AdminScreenState extends State<AdminScreen> {
                         TextField(
                           onChanged: _filterAssignments,
                           decoration: InputDecoration(
-                            hintText: 'Search ...',
+                            hintText: 'Search Events...',
                             prefixIcon: const Icon(
                               Icons.search,
                               color: Color(0xFF2B4F87),
@@ -175,9 +174,8 @@ class _AdminScreenState extends State<AdminScreen> {
                                           Navigator.push(
                                             context,
                                             MaterialPageRoute(
-                                              builder: (context) =>
-                                                  DetailPage(
-                                                      assignment: assignment),
+                                              builder: (context) => DetailPage(
+                                                  assignment: assignment),
                                             ),
                                           );
                                         },
@@ -198,8 +196,7 @@ class _AdminScreenState extends State<AdminScreen> {
                                               Container(
                                                 padding:
                                                     const EdgeInsets.all(10),
-                                                decoration:
-                                                    const BoxDecoration(
+                                                decoration: const BoxDecoration(
                                                   color: Color(0xFF2B4F87),
                                                   shape: BoxShape.circle,
                                                 ),
@@ -230,8 +227,7 @@ class _AdminScreenState extends State<AdminScreen> {
                                                       '${assignment['date']} | ${assignment['start_time']} - ${assignment['stop_time']}',
                                                       style: TextStyle(
                                                         fontSize: 14,
-                                                        color:
-                                                            Colors.grey[600],
+                                                        color: Colors.grey[600],
                                                       ),
                                                     ),
                                                   ],
@@ -283,12 +279,11 @@ class _AdminScreenState extends State<AdminScreen> {
                 ),
               ),
             FloatingActionButton(
-              heroTag: "createAssignment",
+              heroTag: "create Assignment",
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(
-                      builder: (context) => CreateAssignment()),
+                  MaterialPageRoute(builder: (context) => CreateAssignment()),
                 );
               },
               backgroundColor: const Color.fromARGB(255, 60, 94, 148),
@@ -416,9 +411,10 @@ class _ViewBoardPageState extends State<ViewBoardPage> {
                   itemCount: boardAssignments.length,
                   itemBuilder: (context, index) {
                     final assignment = boardAssignments[index];
-                    final String taskDetails = assignment['task_details'] is String
-                        ? parseTaskDetails(assignment['task_details'])
-                        : assignment['task_details'].toString();
+                    final String taskDetails =
+                        assignment['task_details'] is String
+                            ? parseTaskDetails(assignment['task_details'])
+                            : assignment['task_details'].toString();
                     return Card(
                       margin: const EdgeInsets.symmetric(vertical: 8.0),
                       elevation: 4,
@@ -452,7 +448,8 @@ class _ViewBoardPageState extends State<ViewBoardPage> {
                               // Explanation Section
                               Row(
                                 children: const [
-                                  Icon(Icons.description, color: Colors.blueAccent),
+                                  Icon(Icons.description,
+                                      color: Colors.blueAccent),
                                   SizedBox(width: 8),
                                   Text(
                                     "Explanation:",
@@ -472,18 +469,26 @@ class _ViewBoardPageState extends State<ViewBoardPage> {
                               const Divider(),
                               const SizedBox(height: 8),
                               // Date, Start Time, Stop Time, Total Time
-                              buildDetailRow(Icons.calendar_today, "Date", assignment['date'] ?? ''),
-                              buildDetailRow(Icons.access_time, "Start Time", assignment['start_time'] ?? ''),
-                              buildDetailRow(Icons.access_time, "Stop Time", assignment['stop_time'] ?? ''),
-                              buildDetailRow(Icons.hourglass_bottom, "Total Time", assignment['total_time'] ?? ''),
+                              buildDetailRow(Icons.calendar_today, "Date",
+                                  assignment['date'] ?? ''),
+                              buildDetailRow(Icons.access_time, "Start Time",
+                                  assignment['start_time'] ?? ''),
+                              buildDetailRow(Icons.access_time, "Stop Time",
+                                  assignment['stop_time'] ?? ''),
+                              buildDetailRow(Icons.hourglass_bottom,
+                                  "Total Time", assignment['total_time'] ?? ''),
                               const SizedBox(height: 8),
                               const Divider(),
                               const SizedBox(height: 8),
                               // Additional Details
-                              buildDetailRow(Icons.group, "Students", assignment['number_of_students'].toString()),
-                              buildDetailRow(Icons.task, "Tasks", assignment['numberoftasks'].toString()),
-                              buildDetailRow(Icons.list, "Task Details", taskDetails),
-                              buildDetailRow(Icons.star, "Ranks", assignment['numberofranks'].toString()),
+                              buildDetailRow(Icons.group, "Students",
+                                  assignment['number_of_students'].toString()),
+                              buildDetailRow(Icons.task, "Tasks",
+                                  assignment['numberoftasks'].toString()),
+                              buildDetailRow(
+                                  Icons.list, "Task Details", taskDetails),
+                              buildDetailRow(Icons.star, "Ranks",
+                                  assignment['numberofranks'].toString()),
                             ],
                           ),
                         ),
